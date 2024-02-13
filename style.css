@@ -1,0 +1,76 @@
+/* styles.css */
+
+/* Body */
+body {
+    background-color: #111827; /* Dark background color */
+    color: #ffffff; /* Text color */
+    font-family: sans-serif; /* Specify your preferred font family */
+}
+
+/* Navigation */
+nav {
+    background-color: #1f2937; /* Dark blue-gray background color */
+    color: #ffffff; /* Text color for navigation links */
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav a {
+    color: #ffffff; /* Text color for navigation links */
+    text-decoration: none;
+    margin-right: 1rem;
+}
+
+nav a:hover {
+    color: #d1d5db; /* Hover color for navigation links */
+}
+
+/* Hero Section */
+header {
+    background-color: #2563eb; /* Blue background color */
+    color: #ffffff; /* Text color for the section */
+    padding: 4rem 0;
+    text-align: center;
+}
+
+/* About Section */
+#about {
+    background-color: #ffffff; /* White background color */
+    color: #111827; /* Text color for the section */
+    padding: 4rem 0;
+    text-align: center;
+}
+
+/* Experience Section */
+#experience {
+    background-color: #f3f4f6; /* Light gray background color */
+    color: #111827; /* Text color for the section */
+    padding: 4rem 0;
+    text-align: center;
+}
+
+/* Projects Section */
+#projects {
+    background-color: #ffffff; /* White background color */
+    color: #111827; /* Text color for the section */
+    padding: 4rem 0;
+    text-align: center;
+}
+
+/* Contact Section */
+#contact {
+    background-color: #1f2937; /* Dark blue-gray background color */
+    color: #ffffff; /* Text color for the section */
+    padding: 4rem 0;
+    text-align: center;
+}
+
+/* Footer Section */
+footer {
+    background-color: #374151; /* Dark gray background color */
+    color: #ffffff; /* Text color for the footer */
+    padding: 1rem 0;
+    text-align: center;
+}
