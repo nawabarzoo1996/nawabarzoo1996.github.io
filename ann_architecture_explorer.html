@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ANN Architecture Explorer — Feature Extraction + MLP Learning -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANN Architecture Explorer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#0E1320;
+  --panel:#161D2E;
+  --panel-2:#1B2436;
+  --line:rgba(255,255,255,.08);
+  --line-strong:rgba(255,255,255,.14);
+  --text:#E8EDF7;
+  --muted:#93A0B8;
+  --extract:#38BDF8;      /* feature extraction — cool */
+  --extract-dim:rgba(56,189,248,.12);
+  --extract-line:rgba(56,189,248,.35);
+  --mlp:#FBBF24;          /* MLP learning — warm */
+  --mlp-dim:rgba(251,191,36,.12);
+  --mlp-line:rgba(251,191,36,.35);
+  --out:#34D399;          /* output */
+  --display:'Space Grotesk',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+svg{max-width:100%;max-height:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(56,189,248,.07), transparent 60%),
+    radial-gradient(1000px 600px at 90% 110%, rgba(251,191,36,.06), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  line-height:1.55;
+  padding:28px 20px 56px;
+  min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto}
+
+/* ---------- header ---------- */
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--muted);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--line-strong)}
+h1{
+  font-family:var(--display);font-weight:700;font-size:clamp(26px,4.5vw,40px);
+  line-height:1.08;letter-spacing:-.02em;
+}
+h1 .a{color:var(--extract)}
+h1 .b{color:var(--mlp)}
+.sub{color:var(--muted);max-width:62ch;margin-top:12px;font-size:15px}
+
+/* ---------- toggle ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:26px 0 8px}
+.seg{
+  display:inline-flex;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:5px;gap:4px;
+}
+.seg button{
+  font-family:var(--display);font-weight:600;font-size:14px;color:var(--muted);
+  background:transparent;border:0;padding:9px 18px;border-radius:8px;cursor:pointer;
+  transition:.18s ease;letter-spacing:.01em;
+}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.flowtoggle{
+  font-family:var(--mono);font-size:12px;color:var(--muted);background:transparent;
+  border:1px solid var(--line);border-radius:9px;padding:9px 14px;cursor:pointer;transition:.18s;
+}
+.flowtoggle:hover{border-color:var(--line-strong);color:var(--text)}
+
+.tagline{font-family:var(--mono);font-size:12px;color:var(--muted);margin:18px 0 4px}
+.tagline b{color:var(--text);font-weight:500}
+
+/* ---------- pipeline ---------- */
+.pipe{
+  margin-top:14px;display:flex;gap:14px;align-items:stretch;overflow-x:auto;
+  padding:22px 6px 14px;
+}
+.zone{
+  position:relative;border-radius:16px;padding:34px 16px 16px;display:flex;gap:12px;
+  align-items:center;flex:0 0 auto;
+}
+.zone.extract{background:var(--extract-dim);border:1px solid var(--extract-line)}
+.zone.mlp{background:var(--mlp-dim);border:1px solid var(--mlp-line)}
+.zone-label{
+  position:absolute;top:-11px;left:16px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;
+  background:var(--bg);
+}
+.zone.extract .zone-label{color:var(--extract);border:1px solid var(--extract-line)}
+.zone.mlp .zone-label{color:var(--mlp);border:1px solid var(--mlp-line)}
+
+.stage{
+  position:relative;flex:0 0 auto;width:118px;min-height:132px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:13px 11px;cursor:pointer;
+  display:flex;flex-direction:column;gap:8px;transition:.2s ease;
+}
+.stage:hover{transform:translateY(-3px);border-color:var(--line-strong)}
+.stage.on{box-shadow:0 0 0 1.5px currentColor, 0 10px 26px rgba(0,0,0,.35)}
+.zone.extract .stage.on{color:var(--extract)}
+.zone.mlp .stage.on{color:var(--mlp)}
+.glyph{width:42px;height:42px;display:flex;align-items:center;justify-content:center;margin:0 auto;flex:0 0 auto}
+.glyph svg{display:block;width:100%;height:100%}
+.stage .nm{font-family:var(--display);font-weight:600;font-size:13.5px;color:var(--text);line-height:1.2}
+.stage .tp{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.03em}
+.stage .kind{
+  margin-top:auto;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);opacity:.8;
+}
+
+/* connector arrows */
+.arrow{flex:0 0 auto;align-self:center;width:26px;height:2px;position:relative;background:var(--line-strong)}
+.arrow::after{content:"";position:absolute;right:-1px;top:-3px;border:4px solid transparent;border-left-color:var(--line-strong)}
+.arrow.flow{overflow:visible}
+.arrow.flow .dot{
+  position:absolute;top:50%;left:0;width:7px;height:7px;border-radius:50%;
+  transform:translate(-50%,-50%);background:var(--extract);
+  box-shadow:0 0 10px 1px var(--extract);
+  animation:run 2.6s linear infinite;
+}
+.arrow.handoff{width:34px}
+.arrow.handoff .dot{background:#fff;box-shadow:0 0 10px 1px #fff}
+.zone.mlp ~ * .dot, .arrow.mlpflow .dot{background:var(--mlp);box-shadow:0 0 10px 1px var(--mlp)}
+@keyframes run{0%{left:-2px;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:104%;opacity:0}}
+.paused .dot{animation:none;opacity:0}
+@media (prefers-reduced-motion: reduce){.dot{animation:none;opacity:0}}
+
+/* terminal nodes (input / output) */
+.node{
+  flex:0 0 auto;width:96px;align-self:center;text-align:center;border-radius:12px;
+  padding:14px 8px;border:1px dashed var(--line-strong);background:var(--panel);
+}
+.node .glyph{width:36px;height:36px}
+.node .nm{font-family:var(--display);font-weight:600;font-size:13px;margin-top:6px}
+.node .tp{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.node.input{color:var(--extract)}
+.node.output{color:var(--out);border-color:rgba(52,211,153,.5)}
+
+/* ---------- detail panel ---------- */
+.detail{
+  margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:22px 24px;min-height:120px;
+}
+.detail .dlabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.detail h3{font-family:var(--display);font-size:21px;margin:6px 0 4px;letter-spacing:-.01em}
+.detail .pill{
+  display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;margin-bottom:12px;
+}
+.pill.extract{color:var(--extract);background:var(--extract-dim);border:1px solid var(--extract-line)}
+.pill.mlp{color:var(--mlp);background:var(--mlp-dim);border:1px solid var(--mlp-line)}
+.detail p{color:#C9D2E4;font-size:15px;max-width:74ch}
+.detail .hint{color:var(--muted);font-size:13px;font-style:italic}
+
+/* ---------- principle strip ---------- */
+.principle{
+  margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px}
+.card .h{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.card.x .h{color:var(--extract)} .card.m .h{color:var(--mlp)}
+.card p{color:#C2CBDD;font-size:13.5px}
+
+.foot{margin-top:26px;color:var(--muted);font-size:12px;font-family:var(--mono);text-align:center;opacity:.8}
+
+@media (max-width:640px){
+  .principle{grid-template-columns:1fr}
+  .sub{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow">ANN Final Exam · Interactive Concept Map</div>
+  <h1>Every model is a <span class="a">feature extractor</span><br>feeding an <span class="b">MLP learner</span></h1>
+  <p class="sub">Many neural networks split into two functional halves: a front end that turns raw input into a compact feature representation, and a Multi-Layer Perceptron that maps those features to the output. Toggle a model and click any stage to see what it does.</p>
+
+  <div class="controls">
+    <div class="seg" id="seg">
+      <button data-m="cnn" class="on">CNN</button>
+      <button data-m="rnn">RNN / LSTM</button>
+    </div>
+    <button class="flowtoggle" id="flow">⏸ Pause data flow</button>
+  </div>
+
+  <p class="tagline" id="tagline"></p>
+
+  <div class="pipe" id="pipe"></div>
+
+  <div class="detail" id="detail">
+    <div class="dlabel">Stage detail</div>
+    <h3 id="d-title">Click a stage above</h3>
+    <p id="d-text" class="hint">Each card is one step in the pipeline. Cool cards on the left form the feature-extraction model; warm cards on the right form the MLP learning model.</p>
+  </div>
+
+  <div class="principle">
+    <div class="card x">
+      <div class="h">Feature extraction model</div>
+      <p>Converts high-dimensional, unstructured input (an image, a sequence) into a compact feature vector — automatically, with no manual feature engineering.</p>
+    </div>
+    <div class="card m">
+      <div class="h">MLP learning model</div>
+      <p>Fully-connected layers take that feature vector and learn the supervised mapping to the output, usually ending in a softmax for classification.</p>
+    </div>
+  </div>
+
+  <div class="foot">Trained end-to-end with backpropagation · CNN = spatial · RNN/LSTM = sequential</div>
+</div>
+
+<script>
+// ---- icon glyphs (inline SVG, stroke = currentColor) ----
+const G = {
+  image:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="8" width="28" height="24" rx="2"/><circle cx="15" cy="16" r="3"/><path d="M6 28l9-8 7 6 5-4 7 6"/></svg>`,
+  conv:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="6" width="20" height="20" rx="1"/><rect x="14" y="14" width="20" height="20" rx="1" opacity=".55"/><path d="M16 16h6v6h-6z" fill="currentColor" opacity=".25"/></svg>`,
+  pool:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="6" width="28" height="28" rx="2"/><path d="M20 6v28M6 20h28" opacity=".5"/><rect x="9" y="9" width="8" height="8" fill="currentColor" opacity=".25" stroke="none"/></svg>`,
+  flatten:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="8" width="12" height="12" rx="1"/><path d="M22 14h12M22 20h12M22 26h12" opacity=".8"/><circle cx="20" cy="14" r="1.4" fill="currentColor" stroke="none"/></svg>`,
+  dense:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="12" r="2.4"/><circle cx="11" cy="28" r="2.4"/><circle cx="29" cy="9" r="2.4"/><circle cx="29" cy="20" r="2.4"/><circle cx="29" cy="31" r="2.4"/><path d="M13 12l14-3M13 12l14 8M13 28l14-8M13 28l14 3M13 28l14-19" opacity=".4"/></svg>`,
+  softmax:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 30V18M16 30V10M24 30V22M32 30V14"/><path d="M6 30h30" opacity=".5"/></svg>`,
+  seq:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="14" width="6" height="12" rx="1"/><rect x="17" y="14" width="6" height="12" rx="1"/><rect x="28" y="14" width="6" height="12" rx="1"/><path d="M9 12v-2M20 12v-2M31 12v-2" opacity=".6"/></svg>`,
+  lstm:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="10" width="24" height="20" rx="3"/><circle cx="15" cy="20" r="2.2"/><circle cx="25" cy="20" r="2.2"/><path d="M4 20h4M32 20h4M20 6v4M20 30v4" opacity=".6"/></svg>`,
+  state:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6v12M20 18l8 8M20 18l-8 8" opacity=".6"/><circle cx="20" cy="18" r="6"/><path d="M20 34h0" /></svg>`,
+  out:`<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="20" cy="20" r="13"/><path d="M14 20l4 4 8-9"/></svg>`
+};
+
+// ---- model definitions ----
+const MODELS = {
+  cnn:{
+    tag:`<b>CNN</b> — convolution + pooling extract spatial features, then dense layers classify. <b>LeNet-5 · AlexNet · VGG</b> all follow this.`,
+    input:{glyph:'image', nm:'Image', tp:'28×28×1'},
+    stages:[
+      {z:'extract',glyph:'conv',nm:'Conv + ReLU',tp:'filters · feature maps',k:'extract',
+       d:'Learnable filters slide over the image and detect local patterns. Early conv layers pick up edges and textures; the ReLU adds non-linearity. No hand-crafted features needed — the filters are learned during training.'},
+      {z:'extract',glyph:'pool',nm:'Pooling',tp:'2×2 max',k:'extract',
+       d:'Down-samples each feature map (e.g. max-pooling), shrinking dimensionality and giving a degree of translation invariance so small shifts in the input don\u2019t change the result much.'},
+      {z:'extract',glyph:'conv',nm:'Conv + ReLU',tp:'deeper filters',k:'extract',
+       d:'Deeper convolution layers combine simple features into more complex ones — object parts and shapes. The representation becomes increasingly abstract as you go deeper.'},
+      {z:'extract',glyph:'pool',nm:'Pooling',tp:'2×2 max',k:'extract',
+       d:'Another down-sampling step. After this block the network holds a small stack of high-level feature maps that summarise what is in the image.'},
+      {z:'mlp',glyph:'flatten',nm:'Flatten',tp:'maps → vector',k:'handoff',
+       d:'The handoff. The final feature maps are unrolled into a single 1-D feature vector — this is exactly the input the MLP expects. Everything before this is the feature extractor; everything after is the MLP.'},
+      {z:'mlp',glyph:'dense',nm:'Dense (FC)',tp:'fully connected',k:'mlp',
+       d:'A fully-connected hidden layer — the core of the MLP. It learns combinations of the extracted features that are useful for telling the classes apart.'},
+      {z:'mlp',glyph:'softmax',nm:'Dense + Softmax',tp:'class scores',k:'mlp',
+       d:'The output layer maps to one score per class and softmax turns them into probabilities. This dense head is the MLP learner doing the final supervised decision.'}
+    ],
+    output:{glyph:'out', nm:'Class', tp:'argmax'}
+  },
+  rnn:{
+    tag:`<b>RNN / LSTM</b> — recurrent cells read a sequence step-by-step into a hidden state, then dense layers decide. Used for <b>text · speech · time series</b>.`,
+    input:{glyph:'seq', nm:'Sequence', tp:'x₁ … xₜ'},
+    stages:[
+      {z:'extract',glyph:'lstm',nm:'LSTM cells',tp:'recurrent · gated',k:'extract',
+       d:'The sequence is read one step at a time. The cell keeps a hidden state that carries context forward. LSTM gates (forget / input / output) let it capture long-range dependencies and avoid the vanishing-gradient problem of plain RNNs.'},
+      {z:'extract',glyph:'lstm',nm:'Unrolled steps',tp:'hₜ over time',k:'extract',
+       d:'As the LSTM unrolls across timesteps, each hidden state hₜ accumulates more of the sequence\u2019s context. This is the recurrent layer acting as a temporal feature extractor.'},
+      {z:'extract',glyph:'state',nm:'Final state',tp:'h_T',k:'handoff',
+       d:'The handoff. The final hidden state (or a pooled set of states) is a fixed-size feature vector that summarises the whole sequence — ready for the MLP.'},
+      {z:'mlp',glyph:'dense',nm:'Dense (FC)',tp:'fully connected',k:'mlp',
+       d:'A fully-connected layer — the MLP — takes the sequence\u2019s feature vector and learns the mapping toward the target.'},
+      {z:'mlp',glyph:'softmax',nm:'Dense + Softmax',tp:'class scores',k:'mlp',
+       d:'The output layer produces the final prediction: a class via softmax, or a single value for regression. This dense head is the MLP learner.'}
+    ],
+    output:{glyph:'out', nm:'Label', tp:'softmax'}
+  }
+};
+
+let current='cnn';
+let flowing=true;
+const pipe=document.getElementById('pipe');
+const tagline=document.getElementById('tagline');
+
+function nodeEl(n,cls){
+  const d=document.createElement('div');
+  d.className='node '+cls;
+  d.innerHTML=`<div class="glyph">${G[n.glyph]}</div><div class="nm">${n.nm}</div><div class="tp">${n.tp}</div>`;
+  return d;
+}
+function arrow(kind){
+  const a=document.createElement('div');
+  a.className='arrow '+kind;
+  if(flowing){const dot=document.createElement('span');dot.className='dot';a.appendChild(dot);}
+  return a;
+}
+
+function build(){
+  const m=MODELS[current];
+  tagline.innerHTML='▸ '+m.tag;
+  pipe.innerHTML='';
+  pipe.classList.toggle('paused',!flowing);
+
+  // input node
+  pipe.appendChild(nodeEl(m.input,'input'));
+  pipe.appendChild(arrow('flow'));
+
+  // group stages into contiguous zones
+  let i=0;
+  while(i<m.stages.length){
+    const z=m.stages[i].z;
+    const zone=document.createElement('div');
+    zone.className='zone '+z;
+    zone.innerHTML=`<div class="zone-label">${z==='extract'?'Feature extraction model':'MLP learning model'}</div>`;
+    while(i<m.stages.length && m.stages[i].z===z){
+      const s=m.stages[i];
+      const card=document.createElement('div');
+      card.className='stage';
+      card.dataset.idx=i;
+      card.innerHTML=`<div class="glyph">${G[s.glyph]}</div>
+        <div class="nm">${s.nm}</div><div class="tp">${s.tp}</div>
+        <div class="kind">${s.k==='handoff'?'↳ handoff':s.k}</div>`;
+      card.addEventListener('click',()=>select(i,card));
+      zone.appendChild(card);
+      if(i+1<m.stages.length && m.stages[i+1].z===z){
+        zone.appendChild(arrow(z==='mlp'?'mlpflow':'flow'));
+      }
+      i++;
+    }
+    pipe.appendChild(zone);
+    if(i<m.stages.length) pipe.appendChild(arrow('handoff'));
+  }
+
+  pipe.appendChild(arrow('mlpflow'));
+  pipe.appendChild(nodeEl(m.output,'output'));
+  resetDetail();
+}
+
+function select(idx,card){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));
+  card.classList.add('on');
+  const s=MODELS[current].stages[idx];
+  const zoneName = s.z==='extract'?'Feature extraction':'MLP learning';
+  document.getElementById('d-title').textContent=s.nm;
+  const t=document.getElementById('d-text');
+  t.classList.remove('hint');
+  t.textContent=s.d;
+  let pill=document.querySelector('.detail .pill');
+  if(!pill){pill=document.createElement('span');pill.className='pill';document.getElementById('d-title').after(pill);}
+  pill.className='pill '+s.z;
+  pill.textContent=zoneName+(s.k==='handoff'?' · handoff':'');
+}
+function resetDetail(){
+  document.getElementById('d-title').textContent='Click a stage above';
+  const t=document.getElementById('d-text');t.classList.add('hint');
+  t.textContent='Each card is one step in the pipeline. Cool cards on the left form the feature-extraction model; warm cards on the right form the MLP learning model.';
+  const pill=document.querySelector('.detail .pill');if(pill)pill.remove();
+}
+
+// controls
+document.getElementById('seg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#seg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');current=b.dataset.m;build();
+});
+const flowBtn=document.getElementById('flow');
+flowBtn.addEventListener('click',()=>{
+  flowing=!flowing;
+  flowBtn.textContent=flowing?'⏸ Pause data flow':'▶ Resume data flow';
+  build();
+});
+
+build();
+</script>
+</body>
+</html>
